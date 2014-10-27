@@ -1,7 +1,8 @@
 game:-
+	initPlayers(Player, AI),
 	new(W, window('Game')),
 	new(Counter, counter(117)),
-	new(Ph, phrase(W, point(500,50))),
+	new(Ph, phrase(W, point(50,500))),
 	numlist(0, 116, NL),
 	mapBoard(117, [], LL),
 	maplist(build_list(150,100), NL, LP),
@@ -13,7 +14,13 @@ game:-
 				  message(Counter, free),
 				  message(Ph, free),
 				  message(W, destroy))),
+	
 	send(W, open).
+
+	% sets initial piece positions and amount of pieces
+initPlayers(P, C):-
+	C = [[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],[10,4],[11,4],[12,4],[13,4]],
+	P = [[105,4],[106,4],[107,4],[108,4],[109,4],[110,4],[111,4],[112,4],[113,4],[114,4],[115,4],[116,4],[117,4]].
 	
 	
 mapBoard(0, LL, LL) :- !.
@@ -26,6 +33,7 @@ mapBoard(N, L1, LL) :-
 	
 create_cell(W, Counter,Phrase, ChCell, Point,  Code) :-
 	%char_code(Number, Code),
+	
 	Number is 100 - Code,
 	new(H, cell(W, Counter, Phrase, Number, Point)),
 	send(H, my_draw),
@@ -111,13 +119,13 @@ variable(status, object, both, "clicked/unclicked").
 variable(phr, phrase, both, "to display the new letter").
 
 initialise(P, Window : object, Counter : counter,
-	   Phrase: phrase, Letter:name, Center:point) :->
+	   Phrase: phrase, Letter, Center:point) :->
 	send_super(P, initialise),
-	send(P, slot, letter, Letter),
+	send(P, slot, letter, ' '),
 	send(P, slot, center, Center),
 	send(P, slot, window, Window),
 	send(P, slot, count, Counter),
-	send(P, slot, status, unclicked),
+	send(P, slot, status, unoccupied),
 	send(P, slot, phr, Phrase),
 	new(Pa, path),
         (
@@ -138,11 +146,27 @@ initialise(P, Window : object, Counter : counter,
 	),
 	send(P, p, Pa),
 	send(P, slot, color, colour(@default, 65535, 65535, 0)),
+	write('Letter: '), write(Letter), nl,
+	((Letter < 14, send(P, move, 'computer', 4));
+	(Letter > 104, send(P, move, 'player', 4));
+	1 == 1),
 	% create the link between the mouse and the cell
 	send(Pa, recogniser,
 	     click_gesture(left, '', single, message(P, click))).
 
-
+move(P, Player, Units) :->
+	send(P, slot, status, Player),
+	((Player == 'player'),
+		write('player'), nl,
+		send(P, slot, color, colour(@default, 65535, 0, 65535)),
+		send(P, slot, letter, Units),
+	);
+	((Player == 'computer'),
+		write('computer'), nl,
+		send(P, slot, color, colour(@default, 0, 65535, 65535)),
+		send(P, slot, letter, Units)
+	).
+	
 unlink(P) :->
 	get(P, slot, p, Pa),
 	send(Pa, free),
@@ -154,11 +178,12 @@ unlink(P) :->
 click(P) :->
 	% test if the cell has already been clicked
 	% succeed when the the status is 'unclicked'
-	get(P, slot, status, unclicked),
+	get(P, slot, status, unoccupied), 
 	% change the status
 	send(P, slot, status, clicked),
 	% change the color
 	send(P, slot, color, colour(@default, 65535, 0, 65535)),
+	send(P, slot, letter, 4),
 	send(P, my_draw),
 	get(P, slot, letter, Letter),
 	% inform the object "phrase" that a new letter is clicked
