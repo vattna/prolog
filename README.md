@@ -1,0 +1,4 @@
+prolog
+======
+
+deklarativ programering /skola
