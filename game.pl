@@ -1,10 +1,9 @@
 game:-
-	initPlayers(Player, AI),
 	new(W, window('Game')),
-	new(Counter, counter(117)),
+	new(Counter, counter(126)),
 	new(Ph, phrase(W, point(50,500))),
-	numlist(0, 116, NL),
-	mapBoard(117, [], LL),
+	numlist(0, 125, NL),
+	mapBoard(126, [], LL),
 	maplist(build_list(150,100), NL, LP),
 	new(ChCell, chain),
 	maplist(create_cell(W, Counter, Ph, ChCell), LP, LL),
@@ -17,16 +16,11 @@ game:-
 	
 	send(W, open).
 
-	% sets initial piece positions and amount of pieces
-initPlayers(P, C):-
-	C = [[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],[10,4],[11,4],[12,4],[13,4]],
-	P = [[105,4],[106,4],[107,4],[108,4],[109,4],[110,4],[111,4],[112,4],[113,4],[114,4],[115,4],[116,4],[117,4]].
-	
 	
 mapBoard(0, LL, LL) :- !.
 
 mapBoard(N, L1, LL) :-
-	C is 100 - N,
+	C is 126 - N,
 	(   \+member(C, L1) ->
 	    N1 is N-1, mapBoard(N1, [C|L1], LL)
 	;   mapBoard(N, L1, LL)).
@@ -40,8 +34,8 @@ create_cell(W, Counter,Phrase, ChCell, Point,  Code) :-
 	send(ChCell, append, H).
 	
 build_list(X0,Y0, N, point(X,Y)) :-
-	C is N mod  13,
-	L is N // 13,
+	C is N mod  14,
+	L is N // 14,
 	C0 is C mod 2,
 	X is C * 75 + X0,
 	Y is L * round(50 * sqrt(3)) + C0 * round(25 * sqrt(3)) + Y0.
@@ -117,11 +111,18 @@ variable(color, colour, both, "colour of the cell").
 variable(count, counter, both, "counter of unclicked cells").
 variable(status, object, both, "clicked/unclicked").
 variable(phr, phrase, both, "to display the new letter").
+variable(northeast, name, both, "position").
+variable(north, name, both, "position").
+variable(northwest, name, both, "position").
+variable(southeast, name, both, "position").
+variable(south, name, both, "position").
+variable(southwest, name, both, "position").
+
 
 initialise(P, Window : object, Counter : counter,
-	   Phrase: phrase, Letter, Center:point) :->
+	   Phrase: phrase, Number, Center:point) :->
 	send_super(P, initialise),
-	send(P, slot, letter, ' '),
+	send(P, slot, letter, Number),
 	send(P, slot, center, Center),
 	send(P, slot, window, Window),
 	send(P, slot, count, Counter),
@@ -146,26 +147,57 @@ initialise(P, Window : object, Counter : counter,
 	),
 	send(P, p, Pa),
 	send(P, slot, color, colour(@default, 65535, 65535, 0)),
-	write('Letter: '), write(Letter), nl,
-	((Letter < 14, send(P, move, 'computer', 4));
-	(Letter > 104, send(P, move, 'player', 4));
+	((Number < 15, send(P, move, 'computer', 4));
+	(Number > 112, send(P, move, 'player', 4));
 	1 == 1),
+	send(P, setNeighbors, Number),
 	% create the link between the mouse and the cell
 	send(Pa, recogniser,
 	     click_gesture(left, '', single, message(P, click))).
 
+setNeighbors(P, Number):->
+	write('for number: '), write(Number), nl,
+	(N is Number - 14, N > 0 ; N = 0),
+	%write('N: '), write(N), nl,
+	(S is Number + 14, S <126 ;S = 0),
+	%write('S: '), write(S), nl,
+	
+	Mod is mod(Number, 2),
+	(Mod == 0,
+		((NE is Number - 1, NE > 0 ; NE = 0),
+		(NW is Number + 1,NW > 0 ; NW = 0),
+		(SE is Number + 13, SE <126 ;SE = 0),
+		(SW is Number + 15), SW <126 ;SW = 0)
+	);
+	(Mod == 1,
+		((NE is Number - 15, NE > 0 ; NE = 0),
+		(NW is Number - 13,NW > 0 ; NW = 0),
+		(SE is Number - 1, SE <126 ;SE = 0),
+		(SW is Number + 1), SW <126 ;SW = 0)
+	),
+	(
+	(member(Number, [1,15,29,43,57,71,85,99,113]), NW = 0, SW = 0);
+	(member(Number, [14,28,24,56,70,84,98,112,126]), NE = 0, SE = 0);
+	true),
+	
+	send(P, slot, northeast, NE),
+	send(P, slot, north, N),
+	send(P, slot, northwest, NW),
+	send(P, slot, southeast, SE),
+	send(P, slot, south, S),
+	send(P, slot, southwest, SW)
+	).
+	
+	
 move(P, Player, Units) :->
 	send(P, slot, status, Player),
-	((Player == 'player'),
-		write('player'), nl,
-		send(P, slot, color, colour(@default, 65535, 0, 65535)),
-		send(P, slot, letter, Units),
-	);
+	(((Player == 'player'),
+		send(P, slot, color, colour(@default, 65535, 0, 65535)));
+		%send(P, slot, letter, Units));
 	((Player == 'computer'),
-		write('computer'), nl,
-		send(P, slot, color, colour(@default, 0, 65535, 65535)),
-		send(P, slot, letter, Units)
-	).
+		send(P, slot, color, colour(@default, 0, 65535, 65535))
+		%send(P, slot, letter, Units)
+	)).
 	
 unlink(P) :->
 	get(P, slot, p, Pa),
