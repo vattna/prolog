@@ -1,13 +1,10 @@
 :- pce_begin_class(gameboard, string, "spelled string").
 variable(selected, object, both, "the selected cell" ).
 
-initialise :->
-		send(P, slot, nb, N).
-
-setSelected(Cell: object):->
+setSelected(P, Cell: object, Old):->
+	get(P, slot, selected, Old),
+	write(selectedAHexagon), nl,
 	send(P, slot, selected, Cell).
-
-
 
 
 :- pce_end_class(gameboard).

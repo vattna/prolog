@@ -95,7 +95,10 @@ move(P, Player, Units) :->
 	((Player == 'computer'),
 		send(P, slot, color, colour(@default, 0, 65535, 65535)),
 		send(P, slot, letter, Units)
-	)).
+	));
+	send(P, slot, color, colour(@default, 65535, 65535, 0)),
+	send(P, slot, letter, ' ')
+	.
 
 unlink(P) :->
 	get(P, slot, p, Pa),
@@ -109,7 +112,7 @@ click(P) :->
 	((get(P, slot, status, player),
 		send(P, selectUnit));
 	(get(P, slot, status, computer),
-		send(P, selectEnemy));
+		send(P, attack));
 	(get(P, slot, status, unoccupied),
 		send(P, selectFree))),
 	send(P, my_draw).
@@ -134,10 +137,15 @@ click(P) :->
 selectUnit(P) :->
 	send(P, slot, status, selected),
 	get(P, gameboard, Gameboard),
-	send(Gameboard, setSelected, P), 
+	send(Gameboard, setSelected, P, Old),
+	send(Gameboard, unitSelected, 'true'),
+	%send(Old, slot, color, colour(@default, 65535, 65535, 0)),
 	send(P, slot, color, colour(@default, 30000, 0, 30000)).
 	
-selectEnemy(P) :->
+attack(P) :->
+	get(P, gameboard, Gameboard),
+	send(Gameboard, unitSelected, 'true'),
+	
 	write('selected enemy'), nl.
 
 selectFree(P) :->
