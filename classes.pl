@@ -1,10 +1,25 @@
-:- pce_begin_class(gameboard, string, "spelled string").
+:- pce_begin_class(gameboard, "gameboard object").
 variable(selected, object, both, "the selected cell" ).
+variable(selectedStatus, name, both, 'true/false if a cell is selected').
+
+variable(emptyColor, object, both, 'color of an empty cell').
+variable(playerColor, object, both, 'color of an player occupied cell').
+variable(enemyColor, object, both, 'color of an computer occupied cell').
+variable(selectedColor, object, both, 'color of an selected cell').
+
+initialise(P, String):-
+	write('try to init '), write(String), nl,
+	send(P, slot, emptyColor, colour(@default, 65535, 65535, 0)),
+	send(P, slot, playerColor, colour(@default, 65535, 0, 65535)),
+	send(P, slot, enemyColor, colour(@default, 0, 65535, 65535)),
+	send(P, slot, selectedColor, colour(@default, 30000, 0, 30000)),
+	send(P, slot, selectedStatus, 'false').
 
 setSelected(P, Cell: object, Old):->
-	get(P, slot, selected, Old),
-	write(selectedAHexagon), nl,
-	send(P, slot, selected, Cell).
+	write('try to selected A'), nl,
+	(get(P, slot, selectedStatus, 'true'), get(P, slot, selected, Old));
+	send(P, slot, selected, Cell), send(P,slot,selctedStatus, 'true'),
+	write('selected A Hexagon'), nl.
 
 
 :- pce_end_class(gameboard).

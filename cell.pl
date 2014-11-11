@@ -1,13 +1,13 @@
 :- pce_begin_class(cell, path, "The honneycomb cell").
-variable(gameboard, object, both, "keeps track of what is happening on the board").
 variable(p, path, both, "the cell itself" ).
 variable(id, name, both, "the id of the cell").
 variable(window, object, both, "the display" ).
 variable(letter, name, both, "Upcase letter displayed in the cell" ).
 variable(center, point, both, "coordinates of the center of the cell").
+variable(defaultColor, colour, both, 'default color of the cell').
 variable(color, colour, both, "colour of the cell").
 variable(count, counter, both, "counter of unclicked cells").
-variable(status, object, both, "clicked/unclicked").
+variable(status, object, both, "unoccupied/player/computer").
 variable(phr, phrase, both, "to display the new letter").
 variable(northeast, name, both, "position").
 variable(north, name, both, "position").
@@ -18,9 +18,8 @@ variable(southwest, name, both, "position").
 
 
 initialise(P, Window : object, Counter : counter,
-	   Phrase: phrase, Number, Center:point, Gameboard : object) :->
+	   Phrase: phrase, Number, Center:point) :->
 	send_super(P, initialise),
-	send(P, slot, gameboard, Gameboard),
 	send(P, slot, id, Number),
 	send(P, slot, letter, ' '),
 	send(P, slot, center, Center),
@@ -47,6 +46,7 @@ initialise(P, Window : object, Counter : counter,
 	),
 	send(P, p, Pa),
 	send(P, slot, color, colour(@default, 65535, 65535, 0)),
+	send(P, slot, defaultColor, colour(@default, 65535, 65535, 0)),
 	((Number < 15, send(P, move, 'computer', 4));
 	(Number > 112, send(P, move, 'player', 4));
 	1 == 1),
@@ -56,7 +56,6 @@ initialise(P, Window : object, Counter : counter,
 	     click_gesture(left, '', single, message(P, click))).
 
 setNeighbors(P, Number):->
-	write('for number: '), write(Number), nl,
 	(N is Number - 14, N > 0 ; N = 0),
 	%write('N: '), write(N), nl,
 	(S is Number + 14, S <126 ;S = 0),
@@ -78,7 +77,6 @@ setNeighbors(P, Number):->
 	(member(Number, [1,15,29,43,57,71,85,99,113]), NW = 0, SW = 0);
 	(member(Number, [14,28,24,56,70,84,98,112,126]), NE = 0, SE = 0);
 	true),
-
 	send(P, slot, northeast, NE),
 	send(P, slot, north, N),
 	send(P, slot, northwest, NW),
@@ -133,18 +131,19 @@ click(P) :->
 	% inform the object "counter" that a new letter is clicked
 	%get(P, count, Counter),
 	%send(Counter, decrement).
+reset(P):-
+	%get(P, slot, defaultColor, Color),
+	send(P, slot, color, Color),
+	send(P, my_draw).
 	
 selectUnit(P) :->
-	send(P, slot, status, selected),
-	get(P, gameboard, Gameboard),
-	send(Gameboard, setSelected, P, Old),
-	send(Gameboard, unitSelected, 'true'),
+	cellPred('selected', Old), Old \= null, send(Old, reset),
+	cellPred('selected', P),
 	%send(Old, slot, color, colour(@default, 65535, 65535, 0)),
-	send(P, slot, color, colour(@default, 30000, 0, 30000)).
+	color('selectedUnit', Color),
+	send(P, slot, color,  Color).
 	
 attack(P) :->
-	get(P, gameboard, Gameboard),
-	send(Gameboard, unitSelected, 'true'),
 	
 	write('selected enemy'), nl.
 
