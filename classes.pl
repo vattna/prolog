@@ -1,4 +1,4 @@
-:- pce_begin_class(gameboard, "gameboard object").
+:- pce_begin_class(gameboard, object, "gameboard object").
 variable(selected, object, both, "the selected cell" ).
 variable(selectedStatus, name, both, 'true/false if a cell is selected').
 
